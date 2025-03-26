@@ -92,7 +92,10 @@ basename -a $SUBUNUTS >> "$LIBGNAT_LST"
 rm -v $SUBUNUTS
 
 echo "Copy extra C includes"
-cp -v "$GCC"/gcc/ada/tb-gcc.c "$GCC"/gcc/ada/gsocket.h "$GCC"/libgcc/unwind-pe.h "$DST"
+for J in tb-gcc.c runtime.h gsocket.h ; do
+   [ -f "$GCC"/gcc/ada/$J ] && cp -v "$GCC"/gcc/ada/$J "$DST"
+done
+cp -v "$GCC"/libgcc/unwind-pe.h "$DST"
 
 echo "Creating libgnarl.lst, libgnat.lst"
 (cd "$CACHE"/libgnarl/; ls | sort > $DST/libgnarl.lst)
@@ -109,14 +112,14 @@ echo "Unused files:"
 MAJOR=`echo $VER | cut -f1 -d.`
 PLUGIN="/usr/lib/gcc/$TARGET/$MAJOR/plugin/include"
 
-if [ -d "$PLUGIN" -a "$2" != "$2" ] ; then
+if [ -d "$PLUGIN" -a "$2" != "$3" ] ; then
     CPATH="$PLUGIN" gprbuild -j0 -P "$DST"/libada.gpr -p
-    echo "Compare libgnat.a"
+    echo "Compare file list of libgnat.a"
     $AR t $2/../adalib/libgnat.a | sort > $CACHE/libgnat.orig.txt
     $AR t $DST/../adalib/libgnat.a | sort > $CACHE/libgnat.next.txt
     diff -u $CACHE/libgnat.orig.txt $CACHE/libgnat.next.txt
 
-    echo "Compare libgnarl.a"
+    echo "Compare file list of libgnarl.a"
     $AR t $2/../adalib/libgnarl.a | sort > $CACHE/libgnarl.orig.txt
     $AR t $DST/../adalib/libgnarl.a | sort > $CACHE/libgnarl.next.txt
     diff -u $CACHE/libgnarl.orig.txt $CACHE/libgnarl.next.txt
@@ -126,7 +129,7 @@ else
     echo "or"
     echo "apt install gcc-$MAJOR-plugin-dev-$TARGET"
     echo "Then build RTS with"
-    echo "CPATH="$PLUGIN" gprbuild -j0 -P "$DST"/libada.gpr -p"
+    echo "CPATH="$PLUGIN" gprbuild --target=$TARGET -j0 -P "$DST"/libada.gpr -p"
 fi
 
 rm -rf "$CACHE"/libgnarl" "$CACHE"/libgnat"
